@@ -59,6 +59,7 @@ class FormPendaftaran extends Component
         if ($this->bukti_transfer) {
             $this->bukti_transfer->store('bukti_transfers', 'public');
         }
+        
 
         // Save data to database
         Pendaftaran::create([
@@ -75,6 +76,10 @@ class FormPendaftaran extends Component
 
         // Reset form
         $this->reset(['username', 'password', 'nama', 'jenis_kelamin', 'cabangIdn', 'program_idn', 'bukti_transfer']);
+    }
+    public function updatedBuktiTransfer()
+    {
+        $this->dispatch('livewire-upload-start');
     }
 
     public function render()

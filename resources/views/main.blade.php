@@ -18,12 +18,9 @@
                     </div>
                     <livewire:cabang-kuota-card />
                 </div>
-                <div class="card card-primary">
-                    <div class="card-header">
-                        <h4>Formulir Pendaftaran</h4>
-                    </div>
-                    <livewire:form-pendaftaran />
-                </div>
+
+                <livewire:form-pendaftaran />
+
             </div>
         </section>
     </div>
