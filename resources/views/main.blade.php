@@ -3,7 +3,8 @@
 @section('title', 'Blank Page')
 
 @push('style')
-    <!-- CSS Libraries -->
+@livewireStyles()
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 @endpush
 
 @section('main')<div class="main-content">
@@ -30,7 +31,6 @@
 @endsection
 
 @push('scripts')
-    <!-- JS Libraies -->
-
-    <!-- Page Specific JS File -->
+@livewireScripts()
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 @endpush

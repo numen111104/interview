@@ -13,68 +13,82 @@ class FormPendaftaran extends Component
 {
     use WithFileUploads;
 
-    public $username;
-    public $password;
-    public $nama;
-    public $jenis_kelamin;
-    public $cabangIdn;
-    public $program_idn;
-    public $bukti_transfer;
-    public $cabangIdns;
+    public $username, $password, $nama, $jenis_kelamin, $cabang_idn, $program_idn, $bukti_transfer;
+    public $cabangs = [];
     public $programs = [];
+
+    protected $rules = [
+        'username' => 'required|email|unique:pendaftarans,username',
+        'password' => 'required|min:6',
+        'nama' => 'required|string|max:255',
+        'jenis_kelamin' => 'required',
+        'cabang_idn' => 'required',
+        'program_idn' => 'required',
+        'bukti_transfer' => 'required|image|mimes:jpg,jpeg,png|max:1024'
+    ];
 
     public function mount()
     {
-        $this->cabangIdns = Cabang::all();
+        $this->cabangs = Cabang::all();
     }
 
-    public function updatedCabangIdn($value)
+    public function updatedCabangIdn()
     {
-        $this->programs = ProgramIdn::where('cabang_idn', $value)->get();
+        $this->program_idn = null; // Reset program_idn on cabang change
+        $this->updatePrograms();
     }
 
-    public function submitForm()
+    public function updatePrograms()
     {
-        $validatedData = $this->validate([
-            'username' => 'required|unique:pendaftarans',
-            'password' => 'required',
-            'nama' => 'required',
-            'bukti_transfer' => 'required|image|max:1048',
-            'cabangIdn' => 'required',
-            'program_idn' => 'required',
-            'jenis_kelamin' => 'required',
-        ], [
-            'username.required' => 'Username harus diisi.',
-            'username.unique' => 'Username sudah terdaftar.',
-            'password.required' => 'Password harus diisi.',
-            'bukti_transfer.required' => 'Bukti transfer harus diisi.',
-            'cabangIdn.required' => 'Cabang harus diisi.',
-            'program_idn.required' => 'Program harus diisi.',
-            'bukti_transfer.image' => 'File bukti transfer harus berupa gambar.',
-            'bukti_transfer.max' => 'File bukti transfer maksimal 1 MB.',
-            'jenis_kelamin.required' => 'Jenis kelamin harus diisi.',
-        ]);
+        if ($this->cabang_idn) {
+            $this->programs = ProgramIdn::where('cabang_idn', $this->cabang_idn)->get();
+        } else {
+            $this->programs = [];
+        }
+    }
 
-        // Handle file upload
-        if ($this->bukti_transfer) {
-            $this->bukti_transfer->store('bukti_transfers', 'public');
+    public function updatedBuktiTransfer()
+    {
+        $this->dispatch('livewire-upload-start');
+    }
+
+    public function updated($field)
+    {
+        $this->validateOnly($field);
+    }
+
+    public function submit()
+    {
+        $this->validate();
+
+        $cabang = Cabang::find($this->cabang_idn);
+        $program = ProgramIdn::find($this->program_idn);
+
+        if ($this->isQuotaFull($cabang, $program)) {
+            $this->addError('program_idn', "Kuota untuk {$program->nama_program} di {$cabang->nama_cabang} sudah penuh, silahkan pilih program yang lain");
+            return;
         }
 
-        // Save data to database
+        $filePath = $this->bukti_transfer->store('bukti_transfer');
+
         Pendaftaran::create([
             'username' => $this->username,
-            'password' => bcrypt($this->password), // Encrypt the password before saving
+            'password' => Hash::make($this->password),
             'nama' => $this->nama,
             'jenis_kelamin' => $this->jenis_kelamin,
-            'cabang_idn' => $this->cabangIdn,
+            'cabang_idn' => $this->cabang_idn,
             'program_idn' => $this->program_idn,
-            'bukti_transfer' => $validatedData['bukti_transfer'],
+            'bukti_transfer' => $filePath,
         ]);
 
-        session()->flash('message', 'Pendaftaran berhasil.');
+        session()->flash('message', 'Selamat! Pendaftaran Berhasil');
+        return redirect()->route('home');
+    }
 
-        // Reset form
-        $this->reset(['username', 'password', 'nama', 'jenis_kelamin', 'cabangIdn', 'program_idn', 'bukti_transfer']);
+    private function isQuotaFull($cabang, $program)
+    {
+        $quotaField = "kuota_{$program->nama_program}";
+        return $cabang->$quotaField <= Pendaftaran::where('cabang_idn', $cabang->id)->where('program_idn', $program->id)->count();
     }
 
     public function render()
