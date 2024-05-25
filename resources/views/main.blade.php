@@ -2,9 +2,7 @@
 
 @section('title', 'Blank Page')
 
-@push('style')
-    <!-- CSS Libraries -->
-@endpush
+@stack('style')
 
 @section('main')<div class="main-content">
         <section class="section">
@@ -29,8 +27,4 @@
     </div>
 @endsection
 
-@push('scripts')
-    <!-- JS Libraies -->
-
-    <!-- Page Specific JS File -->
-@endpush
+@stack('script')
